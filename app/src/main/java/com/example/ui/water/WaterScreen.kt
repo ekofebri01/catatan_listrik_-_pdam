@@ -102,15 +102,12 @@ fun WaterScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag("water_record_list"),
-            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Hero Metric Bento Card
-            item {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Hero Metric Bento Card
                 ExecutiveHeroMetricCard(
                     title = "Tagihan & Meter Air PDAM",
                     primaryValue = UtilityViewModel.formatRupiah(uiState.totalWaterBillEstimatedThisMonth),
@@ -124,21 +121,17 @@ fun WaterScreen(
                     onActionClick = null,
                     modifier = Modifier.testTag("water_hero_metric_card")
                 )
-            }
 
-            // Location Selector Pill Bar (Multi-Location Support)
-            item {
+                // Location Selector Pill Bar (Multi-Location Support)
                 LocationSelectorBar(
                     profiles = uiState.profiles,
                     selectedLocation = uiState.selectedLocationFilter,
                     onSelectLocation = { viewModel.setLocationFilter(it) },
                     modifier = Modifier.testTag("water_location_selector_bar")
                 )
-            }
 
-            // Unpaid Bills Alert Bento Banner
-            if (uiState.unpaidWaterBillsCount > 0) {
-                item {
+                // Unpaid Bills Alert Bento Banner
+                if (uiState.unpaidWaterBillsCount > 0) {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -184,10 +177,8 @@ fun WaterScreen(
                         }
                     }
                 }
-            }
 
-            // Quick Search Bento Row
-            item {
+                // Quick Search Bento Row
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -216,7 +207,14 @@ fun WaterScreen(
                 )
             }
 
-            // Empty State
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag("water_record_list"),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
+            ) {
+                // Empty State
             if (filteredRecords.isEmpty()) {
                 item {
                     Card(
@@ -283,6 +281,7 @@ fun WaterScreen(
             item {
                 Spacer(modifier = Modifier.height(72.dp))
             }
+        }
         }
 
         // Floating Action Button

@@ -1,0 +1,41 @@
+--- app/src/main/java/com/example/ui/viewmodel/UtilityViewModel.kt
++++ app/src/main/java/com/example/ui/viewmodel/UtilityViewModel.kt
+@@ -40,7 +40,9 @@
+     val totalWaterBillEstimatedThisMonth: Double = 0.0,
+     val unpaidWaterBillsCount: Int = 0,
+     val syncMessage: String? = null,
+-    val isSyncing: Boolean = false
++    val isSyncing: Boolean = false,
++    val currentUserEmail: String? = null,
++    val isSigningIn: Boolean = false
+ )
+ 
+ enum class TimeFilter { ALL_TIME, THIS_MONTH }
+@@ -52,6 +54,8 @@
+ 
+     private val _syncMessage = MutableStateFlow<String?>(null)
+     private val _isSyncing = MutableStateFlow(false)
++    private val _currentUserEmail = MutableStateFlow(syncManager.currentUser?.email)
++    private val _isSigningIn = MutableStateFlow(false)
+ 
+     // Filter states
+     val selectedTab = MutableStateFlow(0) // 0: PLN Listrik, 1: PDAM Air, 2: Database & Tarif
+@@ -144,12 +148,16 @@
+     val uiState: StateFlow<UtilityUiState> = combine(
+         dataFlow,
+         _syncMessage,
+-        _isSyncing
+-    ) { data, syncMsg, isSync ->
++        _isSyncing,
++        _currentUserEmail,
++        _isSigningIn
++    ) { data, syncMsg, isSync, email, signingIn ->
+         data.copy(
+             syncMessage = syncMsg,
+-            isSyncing = isSync
++            isSyncing = isSync,
++            currentUserEmail = email,
++            isSigningIn = signingIn
+         )
+     }.stateIn(
+         scope = viewModelScope,

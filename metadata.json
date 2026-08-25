@@ -1,0 +1,6 @@
+{
+  "name": "Listrik & PDAM - Catatan & Simulasi",
+  "description": "Aplikasi pencatatan pembelian token listrik PLN, pembacaan meter & estimasi tagihan PDAM, serta database tarif dan simulasi kwh air & listrik berkelas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

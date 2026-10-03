@@ -121,6 +121,9 @@ fun ElectricityScreen(
                     modifier = Modifier.testTag("electricity_hero_metric_card")
                 )
 
+                // Estimation & Projection Bento Card
+                ElectricityEstimationCard(uiState = uiState)
+
                 // Location Selector Pill Bar (Multi-Location Support)
                 LocationSelectorBar(
                     profiles = uiState.profiles,
@@ -476,6 +479,123 @@ fun ElectricityRecordCard(
                     ),
                     color = TextMutedDark
                 )
+            }
+        }
+    }
+}
+
+@Composable
+fun ElectricityEstimationCard(
+    uiState: UtilityUiState,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .border(1.dp, ElectricGoldBorder, RoundedCornerShape(20.dp))
+            .testTag("electricity_estimation_card"),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = BentoCardBg)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(ElectricGoldSubtle),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ElectricBolt,
+                            contentDescription = null,
+                            tint = ElectricGoldPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Estimasi & Proyeksi Pemakaian",
+                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = ElectricGoldSubtle
+                ) {
+                    Text(
+                        text = "Bulan Ini",
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                        color = ElectricGoldPrimary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    color = BentoTileInner,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BentoBorder)
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = "RATA-RATA HARIAN",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                            color = TextMutedDark
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = UtilityViewModel.formatKwh(uiState.estimatedDailyKwh),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                            color = ElectricGoldPrimary
+                        )
+                        Text(
+                            text = UtilityViewModel.formatRupiah(uiState.estimatedMonthlyElectricityCost / maxOf(1, java.util.Calendar.getInstance().getActualMaximum(java.util.Calendar.DAY_OF_MONTH))),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = TextSecondaryDark
+                        )
+                    }
+                }
+
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    color = BentoTileInner,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BentoBorder)
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = "PROYEKSI 1 BULAN",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                            color = TextMutedDark
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = UtilityViewModel.formatKwh(uiState.estimatedMonthlyKwh),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                            color = ElectricGoldPrimary
+                        )
+                        Text(
+                            text = UtilityViewModel.formatRupiah(uiState.estimatedMonthlyElectricityCost),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            color = TextSecondaryDark
+                        )
+                    }
+                }
             }
         }
     }

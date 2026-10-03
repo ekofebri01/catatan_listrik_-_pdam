@@ -9,11 +9,13 @@ import com.example.data.local.dao.CustomerProfileDao
 import com.example.data.local.dao.ElectricityDao
 import com.example.data.local.dao.PresetDao
 import com.example.data.local.dao.UtilityConfigDao
+import com.example.data.local.dao.UtilityRecordDao
 import com.example.data.local.dao.WaterDao
 import com.example.data.local.entity.CustomerProfile
 import com.example.data.local.entity.ElectricityPreset
 import com.example.data.local.entity.ElectricityRecord
 import com.example.data.local.entity.UtilityConfig
+import com.example.data.local.entity.UtilityRecord
 import com.example.data.local.entity.WaterRecord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,9 +27,10 @@ import kotlinx.coroutines.launch
         WaterRecord::class,
         ElectricityPreset::class,
         UtilityConfig::class,
-        CustomerProfile::class
+        CustomerProfile::class,
+        UtilityRecord::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,6 +39,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun presetDao(): PresetDao
     abstract fun utilityConfigDao(): UtilityConfigDao
     abstract fun customerProfileDao(): CustomerProfileDao
+    abstract fun utilityRecordDao(): UtilityRecordDao
 
     companion object {
         @Volatile

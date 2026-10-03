@@ -1,6 +1,7 @@
 package com.example.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.local.AppDatabase
@@ -38,6 +39,9 @@ data class UtilityUiState(
     val totalWaterUsageThisMonth: Double = 0.0,
     val totalWaterBillEstimatedThisMonth: Double = 0.0,
     val unpaidWaterBillsCount: Int = 0,
+    val estimatedDailyKwh: Double = 0.0,
+    val estimatedMonthlyKwh: Double = 0.0,
+    val estimatedMonthlyElectricityCost: Double = 0.0,
     val syncMessage: String? = null,
     val isSyncing: Boolean = false,
     val currentUserEmail: String? = null,
@@ -131,6 +135,13 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
         val totalWaterEst = visibleWtRecords.sumOf { it.estimatedBillAmount }
         val unpaidCount = visibleWtRecords.count { !it.isPaid }
 
+        val dayOfMonth = currentCalendar.get(Calendar.DAY_OF_MONTH)
+        val daysInMonth = currentCalendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+        val dailyKwh = if (dayOfMonth > 0) totalKwh / dayOfMonth else 0.0
+        val estMonthlyKwh = dailyKwh * daysInMonth
+        val dailyCost = if (dayOfMonth > 0) totalElSpent / dayOfMonth else 0.0
+        val estMonthlyCost = dailyCost * daysInMonth
+
         UtilityUiState(
             electricityRecords = visibleElRecords,
             waterRecords = visibleWtRecords,
@@ -143,7 +154,10 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
             totalKwhThisMonth = totalKwh,
             totalWaterUsageThisMonth = totalWaterUsage,
             totalWaterBillEstimatedThisMonth = totalWaterEst,
-            unpaidWaterBillsCount = unpaidCount
+            unpaidWaterBillsCount = unpaidCount,
+            estimatedDailyKwh = dailyKwh,
+            estimatedMonthlyKwh = estMonthlyKwh,
+            estimatedMonthlyElectricityCost = estMonthlyCost
         )
     }
 
@@ -328,6 +342,20 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
             } else {
                 _syncMessage.value = "Login gagal: ${result.exceptionOrNull()?.localizedMessage}"
             }
+        }
+    }
+
+    private val backupRestoreHelper = BackupRestoreHelper(repository)
+
+    fun exportBackup(context: Context, uri: android.net.Uri) {
+        viewModelScope.launch {
+            backupRestoreHelper.exportData(context, uri)
+        }
+    }
+
+    fun importBackup(context: Context, uri: android.net.Uri) {
+        viewModelScope.launch {
+            backupRestoreHelper.importData(context, uri)
         }
     }
 

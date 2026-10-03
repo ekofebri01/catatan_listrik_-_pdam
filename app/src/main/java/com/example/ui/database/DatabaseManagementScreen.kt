@@ -55,6 +55,9 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
 import com.example.data.local.entity.CustomerProfile
 import com.example.data.local.entity.ElectricityPreset
 import com.example.ui.theme.BentoBorder
@@ -90,6 +93,17 @@ fun DatabaseManagementScreen(
     var showAddProfileDialog by remember { mutableStateOf(false) }
     var editingProfile by remember { mutableStateOf<CustomerProfile?>(null) }
     var deletingProfile by remember { mutableStateOf<CustomerProfile?>(null) }
+    val context = LocalContext.current
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) {
+            viewModel.exportBackup(context, uri)
+        }
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            viewModel.importBackup(context, uri)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -517,6 +531,26 @@ fun DatabaseManagementScreen(
                     )
 
                     Spacer(modifier = Modifier.height(14.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { exportLauncher.launch("VoltHydro_Backup.json") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primaryContainer, contentColor = MaterialTheme.colorScheme.onPrimaryContainer)
+                        ) {
+                            Text("Ekspor (Lokal)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        Button(
+                            onClick = { importLauncher.launch(arrayOf("application/json")) },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondaryContainer, contentColor = MaterialTheme.colorScheme.onSecondaryContainer)
+                        ) {
+                            Text("Impor (Lokal)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                    Text("Pilih Ekspor untuk mencadangkan (timpa file lama) atau Impor untuk memulihkan.", style = MaterialTheme.typography.labelSmall, color = TextMutedDark, modifier = Modifier.padding(top = 8.dp, bottom = 14.dp))
 
                     if (uiState.currentUserEmail == null) {
                         Button(

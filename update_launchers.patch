@@ -1,0 +1,20 @@
+--- app/src/main/java/com/example/ui/database/DatabaseManagementScreen.kt
++++ app/src/main/java/com/example/ui/database/DatabaseManagementScreen.kt
+@@ -93,6 +93,17 @@
+     var editingProfile by remember { mutableStateOf<CustomerProfile?>(null) }
+     var deletingProfile by remember { mutableStateOf<CustomerProfile?>(null) }
+ 
++    val context = LocalContext.current
++    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
++        if (uri != null) {
++            viewModel.exportBackup(context, uri)
++        }
++    }
++    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
++        if (uri != null) {
++            viewModel.importBackup(context, uri)
++        }
++    }
++
+     LazyColumn(
+         modifier = Modifier

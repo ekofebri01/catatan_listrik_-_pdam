@@ -5,6 +5,7 @@ import com.example.data.local.entity.CustomerProfile
 import com.example.data.local.entity.ElectricityPreset
 import com.example.data.local.entity.ElectricityRecord
 import com.example.data.local.entity.UtilityConfig
+import com.example.data.local.entity.UtilityRecord
 import com.example.data.local.entity.WaterRecord
 import kotlinx.coroutines.flow.Flow
 
@@ -14,6 +15,11 @@ class UtilityRepository(private val database: AppDatabase) {
     private val presetDao = database.presetDao()
     private val configDao = database.utilityConfigDao()
     private val profileDao = database.customerProfileDao()
+    private val utilityRecordDao = database.utilityRecordDao()
+
+    // Utility Records
+    val allUtilityRecords: Flow<List<UtilityRecord>> = utilityRecordDao.getAllRecords()
+    suspend fun insertUtilityRecord(record: UtilityRecord): Long = utilityRecordDao.insertRecord(record)
 
     // Electricity Records
     val allElectricityRecords: Flow<List<ElectricityRecord>> = electricityDao.getAllRecords()

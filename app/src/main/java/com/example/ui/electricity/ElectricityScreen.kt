@@ -101,12 +101,15 @@ fun ElectricityScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                // Hero Bento Metric Card
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag("electricity_record_list"),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 88.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Hero Bento Metric Card
+            item {
                 ExecutiveHeroMetricCard(
                     title = "Listrik PLN",
                     primaryValue = UtilityViewModel.formatRupiah(uiState.totalElectricitySpentThisMonth),
@@ -120,19 +123,25 @@ fun ElectricityScreen(
                     onActionClick = null,
                     modifier = Modifier.testTag("electricity_hero_metric_card")
                 )
+            }
 
-                // Estimation & Projection Bento Card
+            // Estimation & Projection Bento Card
+            item {
                 ElectricityEstimationCard(uiState = uiState)
+            }
 
-                // Location Selector Pill Bar (Multi-Location Support)
+            // Location Selector Pill Bar (Multi-Location Support)
+            item {
                 LocationSelectorBar(
                     profiles = uiState.profiles,
                     selectedLocation = uiState.selectedLocationFilter,
                     onSelectLocation = { viewModel.setLocationFilter(it) },
                     modifier = Modifier.testTag("electricity_location_selector_bar")
                 )
+            }
 
-                // Quick Search Bento Row
+            // Quick Search Bento Row
+            item {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -161,14 +170,7 @@ fun ElectricityScreen(
                 )
             }
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .testTag("electricity_record_list"),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                // Empty State
+            // Empty State
             if (filteredRecords.isEmpty()) {
                 item {
                     Card(
@@ -188,10 +190,10 @@ fun ElectricityScreen(
                         ) {
                             Box(
                                 modifier = Modifier
-                                .size(56.dp)
-                                .clip(CircleShape)
-                                .background(ElectricGoldSubtle)
-                                .border(1.dp, ElectricGoldBorder, CircleShape),
+                                    .size(56.dp)
+                                    .clip(CircleShape)
+                                    .background(ElectricGoldSubtle)
+                                    .border(1.dp, ElectricGoldBorder, CircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -227,12 +229,6 @@ fun ElectricityScreen(
                     onDelete = { deletingRecord = record }
                 )
             }
-
-            // Bottom space for FAB
-            item {
-                Spacer(modifier = Modifier.height(72.dp))
-            }
-        }
         }
 
         // Floating Action Button in Bento Accent
@@ -489,6 +485,9 @@ fun ElectricityEstimationCard(
     uiState: UtilityUiState,
     modifier: Modifier = Modifier
 ) {
+    val dailyCost = if (uiState.estimatedDailyKwh > 0) uiState.estimatedMonthlyElectricityCost / 30.0 else 0.0
+    val tokenDays = Math.round(uiState.estimatedTokenDaysLeft)
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -499,7 +498,7 @@ fun ElectricityEstimationCard(
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -533,7 +532,7 @@ fun ElectricityEstimationCard(
                     color = ElectricGoldSubtle
                 ) {
                     Text(
-                        text = "Bulan Ini",
+                        text = if (uiState.isCalculatedFromHistory) "Data Histori" else "Estimasi Standar",
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
                         color = ElectricGoldPrimary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -541,10 +540,12 @@ fun ElectricityEstimationCard(
                 }
             }
 
+            // 3-Column Grid for Metrics
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Rata-rata Harian
                 Surface(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp),
@@ -553,24 +554,25 @@ fun ElectricityEstimationCard(
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text(
-                            text = "RATA-RATA HARIAN",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                            text = "RATA2 HARIAN",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, fontWeight = FontWeight.Bold),
                             color = TextMutedDark
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = UtilityViewModel.formatKwh(uiState.estimatedDailyKwh),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
                             color = ElectricGoldPrimary
                         )
                         Text(
-                            text = UtilityViewModel.formatRupiah(uiState.estimatedMonthlyElectricityCost / maxOf(1, java.util.Calendar.getInstance().getActualMaximum(java.util.Calendar.DAY_OF_MONTH))),
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            text = "${UtilityViewModel.formatRupiah(dailyCost)}/hr",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
                             color = TextSecondaryDark
                         )
                     }
                 }
 
+                // Ketahanan Token
                 Surface(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp),
@@ -579,24 +581,57 @@ fun ElectricityEstimationCard(
                 ) {
                     Column(modifier = Modifier.padding(10.dp)) {
                         Text(
-                            text = "PROYEKSI 1 BULAN",
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Bold),
+                            text = "DURASI TOKEN",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, fontWeight = FontWeight.Bold),
+                            color = TextMutedDark
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "~ $tokenDays Hari",
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
+                            color = ElectricGoldPrimary
+                        )
+                        Text(
+                            text = "per token",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                            color = TextSecondaryDark
+                        )
+                    }
+                }
+
+                // Proyeksi 1 Bulan
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp),
+                    color = BentoTileInner,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, BentoBorder)
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Text(
+                            text = "PROYEKSI BULAN",
+                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 8.5.sp, fontWeight = FontWeight.Bold),
                             color = TextMutedDark
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = UtilityViewModel.formatKwh(uiState.estimatedMonthlyKwh),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 13.sp),
+                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold, fontSize = 12.sp),
                             color = ElectricGoldPrimary
                         )
                         Text(
                             text = UtilityViewModel.formatRupiah(uiState.estimatedMonthlyElectricityCost),
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
                             color = TextSecondaryDark
                         )
                     }
                 }
             }
+
+            Text(
+                text = if (uiState.isCalculatedFromHistory) "💡 Dihitung otomatis dari riwayat interval pembelian token Anda." else "💡 Estimasi awal berdasarkan rata-rata pemakaian standar rumah tangga (dihitung otomatis saat ada riwayat pembelian berikutnya).",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = TextMutedDark
+            )
         }
     }
 }

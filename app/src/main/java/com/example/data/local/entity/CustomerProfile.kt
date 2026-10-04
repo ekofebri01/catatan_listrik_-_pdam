@@ -9,6 +9,7 @@ data class CustomerProfile(
     val name: String,
     val plnMeterNumber: String = "",
     val plnTariffType: String = "R-1/1300 VA",
+    val customRatePerKwh: Double = 0.0,
     val pdamMeterNumber: String = "",
     val pdamName: String = "PDAM",
     val isDefault: Boolean = false

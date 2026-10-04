@@ -88,17 +88,26 @@ class UtilityRepository(private val database: AppDatabase) {
     }
 
     // Electricity kWh estimation from nominal using tariff or nearest preset
-    fun estimateKwhForNominal(nominal: Double, presets: List<ElectricityPreset>, config: UtilityConfig): Double {
-        val matchingPreset = presets.firstOrNull { it.nominal == nominal }
+    fun estimateKwhForNominal(
+        nominal: Double,
+        presets: List<ElectricityPreset>,
+        config: UtilityConfig,
+        tariffType: String = ""
+    ): Double {
+        val matchingPreset = presets.firstOrNull { 
+            it.nominal == nominal && (it.tariffCategory == "SEMUA" || it.tariffCategory.equals(tariffType, ignoreCase = true))
+        } ?: presets.firstOrNull { it.nominal == nominal }
+        
         if (matchingPreset != null) {
             return matchingPreset.kwhReceived
         }
-        // Formula estimation: (Nominal - Admin - PPJ) / Tarif per kWh
-        val admin = 2500.0
-        val ppjPercent = 0.03
-        val netNominal = (nominal - admin) * (1.0 - ppjPercent)
-        val rate = if (config.plnRatePerKwh > 0) config.plnRatePerKwh else 1444.70
-        val estimated = netNominal / rate
-        return if (estimated > 0) Math.round(estimated * 100.0) / 100.0 else 0.0
+        
+        val rate = if (tariffType.isNotBlank()) {
+            com.example.data.local.PlnTariffHelper.getRateForTariff(tariffType, config.plnRatePerKwh)
+        } else {
+            if (config.plnRatePerKwh > 0) config.plnRatePerKwh else 1444.70
+        }
+        
+        return com.example.data.local.PlnTariffHelper.calculateKwh(nominal, rate)
     }
 }

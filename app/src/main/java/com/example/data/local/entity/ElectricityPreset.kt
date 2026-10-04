@@ -11,5 +11,6 @@ data class ElectricityPreset(
     val adminFee: Double = 2500.0,
     val ppjTaxPercent: Double = 3.0,
     val label: String = "",
-    val orderIndex: Int = 0
+    val orderIndex: Int = 0,
+    val tariffCategory: String = "SEMUA"
 )

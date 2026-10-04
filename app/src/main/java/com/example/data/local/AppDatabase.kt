@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
         CustomerProfile::class,
         UtilityRecord::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -98,13 +98,13 @@ abstract class AppDatabase : RoomDatabase() {
                 database.utilityConfigDao().saveConfig(UtilityConfig())
             }
 
-            // Default Profiles (Seed 2 locations for multi-location recording)
+            // Default Profiles (Seed locations with different PLN Tariffs)
             if (database.customerProfileDao().getCount() == 0) {
                 database.customerProfileDao().insertProfile(
                     CustomerProfile(
-                        name = "Lokasi 1 (Rumah Utama)",
+                        name = "Rumah Utama",
                         plnMeterNumber = "542109876543",
-                        plnTariffType = "R-1/1300 VA",
+                        plnTariffType = "R-1/2200 VA",
                         pdamMeterNumber = "081298412",
                         pdamName = "PDAM Surya Sembada",
                         isDefault = true
@@ -112,9 +112,9 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 database.customerProfileDao().insertProfile(
                     CustomerProfile(
-                        name = "Lokasi 2 (Rumah Kedua / Kontrakan)",
+                        name = "Kios / Usaha",
                         plnMeterNumber = "542109876599",
-                        plnTariffType = "R-1/900 VA",
+                        plnTariffType = "R-1M/900 VA",
                         pdamMeterNumber = "081298499",
                         pdamName = "PDAM Tirta Kencana",
                         isDefault = false

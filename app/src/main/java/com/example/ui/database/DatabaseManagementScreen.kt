@@ -462,9 +462,9 @@ fun DatabaseManagementScreen(
                                 ) {
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(profile.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp))
-                                        if (profile.plnMeterNumber.isNotEmpty()) {
-                                            Text("PLN: ${profile.plnMeterNumber} (${profile.plnTariffType})", style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp), color = TextSecondaryDark)
-                                        }
+                                        val option = com.example.data.local.PlnTariffHelper.getOptionByCode(profile.plnTariffType)
+                                        val rateText = if (profile.plnTariffType == "CUSTOM") "Rp ${profile.customRatePerKwh}/kWh" else "Rp ${option.ratePerKwh}/kWh"
+                                        Text("PLN: ${if (profile.plnMeterNumber.isNotBlank()) profile.plnMeterNumber else "-"} • ${option.name} ($rateText)", style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp), color = TextSecondaryDark)
                                         if (profile.pdamMeterNumber.isNotEmpty()) {
                                             Text("PDAM: ${profile.pdamMeterNumber} (${profile.pdamName})", style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp), color = TextSecondaryDark)
                                         }

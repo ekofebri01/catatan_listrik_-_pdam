@@ -102,4 +102,76 @@ class BackupRestoreHelper(private val repository: UtilityRepository) {
             }
         }
     }
+
+    suspend fun exportAutoBackup(context: Context) {
+        withContext(Dispatchers.IO) {
+            try {
+                val elRecords = repository.allElectricityRecords.first()
+                val wtRecords = repository.allWaterRecords.first()
+                val utilityRecords = repository.allUtilityRecords.first()
+                val presets = repository.allPresets.first()
+                val config = repository.config.first()
+                val profiles = repository.allProfiles.first()
+
+                val backupObj = JsonObject()
+                val gson = Gson()
+                
+                backupObj.add("electricityRecords", gson.toJsonTree(elRecords))
+                backupObj.add("waterRecords", gson.toJsonTree(wtRecords))
+                backupObj.add("utilityRecords", gson.toJsonTree(utilityRecords))
+                backupObj.add("presets", gson.toJsonTree(presets))
+                backupObj.add("config", gson.toJsonTree(config))
+                backupObj.add("profiles", gson.toJsonTree(profiles))
+
+                val file = java.io.File(context.filesDir, "volthydro_autobackup.json")
+                file.writeText(backupObj.toString())
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    suspend fun restoreAutoBackup(context: Context): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val file = java.io.File(context.filesDir, "volthydro_autobackup.json")
+                if (!file.exists()) return@withContext false
+
+                val jsonString = file.readText()
+                if (jsonString.isBlank()) return@withContext false
+
+                val gson = Gson()
+                val backupObj = gson.fromJson(jsonString, JsonObject::class.java)
+
+                if (backupObj.has("electricityRecords")) {
+                    val elRecords = gson.fromJson(backupObj.getAsJsonArray("electricityRecords"), Array<ElectricityRecord>::class.java).toList()
+                    elRecords.forEach { repository.insertElectricityRecord(it) }
+                }
+                if (backupObj.has("waterRecords")) {
+                    val wtRecords = gson.fromJson(backupObj.getAsJsonArray("waterRecords"), Array<WaterRecord>::class.java).toList()
+                    wtRecords.forEach { repository.insertWaterRecord(it) }
+                }
+                if (backupObj.has("utilityRecords")) {
+                    val utilityRecords = gson.fromJson(backupObj.getAsJsonArray("utilityRecords"), Array<UtilityRecord>::class.java).toList()
+                    utilityRecords.forEach { repository.insertUtilityRecord(it) }
+                }
+                if (backupObj.has("presets")) {
+                    val presets = gson.fromJson(backupObj.getAsJsonArray("presets"), Array<ElectricityPreset>::class.java).toList()
+                    presets.forEach { repository.insertPreset(it) }
+                }
+                if (backupObj.has("config")) {
+                    val config = gson.fromJson(backupObj.getAsJsonObject("config"), UtilityConfig::class.java)
+                    if (config != null) repository.saveConfig(config)
+                }
+                if (backupObj.has("profiles")) {
+                    val profiles = gson.fromJson(backupObj.getAsJsonArray("profiles"), Array<CustomerProfile>::class.java).toList()
+                    profiles.forEach { repository.insertProfile(it) }
+                }
+                true
+            } catch (e: Exception) {
+                e.printStackTrace()
+                false
+            }
+        }
+    }
 }

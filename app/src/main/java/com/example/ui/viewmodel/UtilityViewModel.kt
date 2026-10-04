@@ -42,6 +42,8 @@ data class UtilityUiState(
     val estimatedDailyKwh: Double = 0.0,
     val estimatedMonthlyKwh: Double = 0.0,
     val estimatedMonthlyElectricityCost: Double = 0.0,
+    val estimatedTokenDaysLeft: Double = 0.0,
+    val isCalculatedFromHistory: Boolean = false,
     val syncMessage: String? = null,
     val isSyncing: Boolean = false,
     val currentUserEmail: String? = null,
@@ -135,12 +137,54 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
         val totalWaterEst = visibleWtRecords.sumOf { it.estimatedBillAmount }
         val unpaidCount = visibleWtRecords.count { !it.isPaid }
 
-        val dayOfMonth = currentCalendar.get(Calendar.DAY_OF_MONTH)
+        // Smart Electricity Usage Estimation Algorithm
+        val sortedElRecords = locationFilteredEl.sortedBy { it.dateEpochMillis }
+        var dailyKwh = 5.0 // Default baseline average for a typical household (~150 kWh/month)
+        var isCalculatedFromHistory = false
+
+        if (sortedElRecords.size >= 2) {
+            val firstDate = sortedElRecords.first().dateEpochMillis
+            val lastDate = sortedElRecords.last().dateEpochMillis
+            val totalDays = maxOf(1L, (lastDate - firstDate) / (1000 * 60 * 60 * 24))
+            
+            // Sum kWh of all tokens except the latest one, as the latest token is currently active
+            val kwhConsumed = sortedElRecords.dropLast(1).sumOf { it.kwhReceived }
+            if (totalDays >= 1 && kwhConsumed > 0) {
+                dailyKwh = kwhConsumed / totalDays.toDouble()
+                isCalculatedFromHistory = true
+            } else {
+                val totalKwhAll = sortedElRecords.sumOf { it.kwhReceived }
+                if (totalDays >= 1 && totalKwhAll > 0) {
+                    dailyKwh = totalKwhAll / totalDays.toDouble()
+                    isCalculatedFromHistory = true
+                }
+            }
+        } else if (sortedElRecords.isNotEmpty()) {
+            val singleRecord = sortedElRecords.first()
+            if (singleRecord.kwhReceived > 0) {
+                // Typical 100k token lasts ~14 days (or ~4.8 kWh/day)
+                dailyKwh = minOf(10.0, maxOf(3.0, singleRecord.kwhReceived / 14.0))
+            }
+        }
+
+        val selectedProfile = profiles.firstOrNull { it.name.equals(locationFilter, ignoreCase = true) }
+        val ratePerKwh = if (selectedProfile != null) {
+            if (selectedProfile.plnTariffType == "CUSTOM" && selectedProfile.customRatePerKwh > 0) {
+                selectedProfile.customRatePerKwh
+            } else {
+                com.example.data.local.PlnTariffHelper.getRateForTariff(selectedProfile.plnTariffType, config?.plnRatePerKwh ?: 1444.70)
+            }
+        } else {
+            if ((config?.plnRatePerKwh ?: 0.0) > 0) config!!.plnRatePerKwh else 1444.70
+        }
+        val dailyCost = dailyKwh * ratePerKwh
+
         val daysInMonth = currentCalendar.getActualMaximum(Calendar.DAY_OF_MONTH)
-        val dailyKwh = if (dayOfMonth > 0) totalKwh / dayOfMonth else 0.0
         val estMonthlyKwh = dailyKwh * daysInMonth
-        val dailyCost = if (dayOfMonth > 0) totalElSpent / dayOfMonth else 0.0
         val estMonthlyCost = dailyCost * daysInMonth
+
+        val activeKwh = sortedElRecords.lastOrNull()?.kwhReceived ?: totalKwh
+        val tokenDaysLeft = if (dailyKwh > 0) activeKwh / dailyKwh else 0.0
 
         UtilityUiState(
             electricityRecords = visibleElRecords,
@@ -157,7 +201,9 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
             unpaidWaterBillsCount = unpaidCount,
             estimatedDailyKwh = dailyKwh,
             estimatedMonthlyKwh = estMonthlyKwh,
-            estimatedMonthlyElectricityCost = estMonthlyCost
+            estimatedMonthlyElectricityCost = estMonthlyCost,
+            estimatedTokenDaysLeft = tokenDaysLeft,
+            isCalculatedFromHistory = isCalculatedFromHistory
         )
     }
 
@@ -186,6 +232,18 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
+    private fun triggerAutoSync() {
+        viewModelScope.launch {
+            try {
+                if (syncManager.currentUser != null && uiState.value.config.isAutoSyncEnabled) {
+                    syncToCloud()
+                }
+            } catch (e: Exception) {
+                // Prevent any crash
+            }
+        }
+    }
+
     // Electricity Actions
     fun addOrUpdateElectricity(record: ElectricityRecord) {
         viewModelScope.launch {
@@ -194,12 +252,14 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
             } else {
                 repository.updateElectricityRecord(record)
             }
+            triggerAutoSync()
         }
     }
 
     fun deleteElectricity(record: ElectricityRecord) {
         viewModelScope.launch {
             repository.deleteElectricityRecord(record)
+            triggerAutoSync()
         }
     }
 
@@ -211,12 +271,14 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
             } else {
                 repository.updateWaterRecord(record)
             }
+            triggerAutoSync()
         }
     }
 
     fun deleteWater(record: WaterRecord) {
         viewModelScope.launch {
             repository.deleteWaterRecord(record)
+            triggerAutoSync()
         }
     }
 
@@ -228,6 +290,7 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
                 actualPaidAmount = if (isPaid) (actualPaid ?: record.estimatedBillAmount) else 0.0
             )
             repository.updateWaterRecord(updated)
+            triggerAutoSync()
         }
     }
 
@@ -239,12 +302,14 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
             } else {
                 repository.updatePreset(preset)
             }
+            triggerAutoSync()
         }
     }
 
     fun deletePreset(preset: ElectricityPreset) {
         viewModelScope.launch {
             repository.deletePreset(preset)
+            triggerAutoSync()
         }
     }
 
@@ -252,6 +317,7 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
     fun saveConfig(config: UtilityConfig) {
         viewModelScope.launch {
             repository.saveConfig(config)
+            triggerAutoSync()
         }
     }
 
@@ -263,12 +329,14 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
             } else {
                 repository.updateProfile(profile)
             }
+            triggerAutoSync()
         }
     }
 
     fun deleteProfile(profile: CustomerProfile) {
         viewModelScope.launch {
             repository.deleteProfile(profile)
+            triggerAutoSync()
         }
     }
 
@@ -298,9 +366,11 @@ class UtilityViewModel(application: Application) : AndroidViewModel(application)
         return repository.calculateWaterBill(usageM3, config)
     }
 
-    fun estimateKwhForNominal(nominal: Double): Double {
+    fun estimateKwhForNominal(nominal: Double, locationName: String? = null): Double {
         val state = uiState.value
-        return repository.estimateKwhForNominal(nominal, state.presets, state.config)
+        val profile = state.profiles.firstOrNull { it.name.equals(locationName ?: state.selectedLocationFilter, ignoreCase = true) }
+        val tariffType = profile?.plnTariffType ?: ""
+        return repository.estimateKwhForNominal(nominal, state.presets, state.config, tariffType)
     }
 
     fun syncToCloud() {

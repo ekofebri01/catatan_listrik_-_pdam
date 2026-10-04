@@ -277,13 +277,12 @@ fun AddEditElectricityDialog(
                                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                         color = if (isSelected) ElectricGoldPrimary else TextSecondaryDark
                                     )
-                                    if (profile.plnMeterNumber.isNotEmpty()) {
-                                        Text(
-                                            text = profile.plnMeterNumber,
-                                            fontSize = 9.sp,
-                                            color = if (isSelected) ElectricGoldSecondary else TextMutedDark
-                                        )
-                                    }
+                                    val option = com.example.data.local.PlnTariffHelper.getOptionByCode(profile.plnTariffType)
+                                    Text(
+                                        text = "${if (profile.plnMeterNumber.isNotBlank()) profile.plnMeterNumber else "PLN"} • ${option.powerLabel}",
+                                        fontSize = 9.sp,
+                                        color = if (isSelected) ElectricGoldSecondary else TextMutedDark
+                                    )
                                 }
                             }
                         }

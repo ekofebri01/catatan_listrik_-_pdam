@@ -21,5 +21,6 @@ data class UtilityConfig(
     val waterTariffTier2LimitM3: Double = 20.0,
     val waterTariffTier2Rate: Double = 3600.0,
     val waterTariffTier3Rate: Double = 5200.0,
-    val isTierPricingEnabled: Boolean = true
+    val isTierPricingEnabled: Boolean = true,
+    val isAutoSyncEnabled: Boolean = true
 )
